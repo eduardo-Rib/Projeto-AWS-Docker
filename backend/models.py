@@ -1,20 +1,24 @@
-from database import db
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-class CentroCusto(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
+db = SQLAlchemy()
 
-class Conta(db.Model):
+class CostCenter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    descricao = db.Column(db.String(200))
-    tipo = db.Column(db.String(10))
-    pessoa = db.Column(db.String(100))
-    valor = db.Column(db.Float)
-    moeda = db.Column(db.String(10))
-    vencimento = db.Column(db.Date)
-    recorrente = db.Column(db.Boolean, default=False)
-    paga = db.Column(db.Boolean, default=False)
-    data_pagamento = db.Column(db.DateTime)
+    name = db.Column(db.String(100), nullable=False)
 
-    centro_id = db.Column(db.Integer, db.ForeignKey('centro_custo.id'))
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(20), nullable=False) # 'pagar' ou 'receber'
+    entity_name = db.Column(db.String(100), nullable=False) # Quem paga ou recebe
+    due_date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    is_recurrent = db.Column(db.Boolean, default=False)
+    
+    # Dados do pagamento (preenchidos depois)
+    status = db.Column(db.String(20), default='pendente') # 'pendente' ou 'pago'
+    payment_date = db.Column(db.Date, nullable=True)
+    currency = db.Column(db.String(10), nullable=True)
+    cost_center_id = db.Column(db.Integer, db.ForeignKey('cost_center.id'), nullable=True)
+    
+    cost_center = db.relationship('CostCenter', backref='transactions')

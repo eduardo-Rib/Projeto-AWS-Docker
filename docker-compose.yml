@@ -1,45 +1,46 @@
-version: "3.9"
+version: '3.8'
 
 services:
   db:
-    image: postgres
+    image: postgres:15-alpine
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: finances_db
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d finances_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  backend1:
+  backend1: &backend_service
     build: ./backend
-    depends_on:
-      - db
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - DATABASE_URL=postgresql://admin:adminpassword@db:5432/finances_db
+    depends_on:
+      db:
+        condition: service_healthy
 
   backend2:
-    build: ./backend
-    depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+    <<: *backend_service
 
   backend3:
-    build: ./backend
-    depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-
-  frontend:
-    build: ./frontend
+    <<: *backend_service
 
   haproxy:
-    image: haproxy:latest
-    ports:
-      - "80:80"
+    image: haproxy:2.4
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5000:5000" # Porta unificada da API
     depends_on:
       - backend1
       - backend2
       - backend3
-      - frontend
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
