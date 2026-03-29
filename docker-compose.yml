@@ -3,6 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: adminpassword
@@ -13,12 +14,13 @@ services:
       test: ["CMD-SHELL", "pg_isready -U admin -d finances_db"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend1: &backend_service
     build: ./backend
+    restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://admin:adminpassword@db:5432/finances_db
+      DATABASE_URL: postgresql://admin:adminpassword@db:5432/finances_db
     depends_on:
       db:
         condition: service_healthy
@@ -31,10 +33,11 @@ services:
 
   haproxy:
     image: haproxy:2.4
+    restart: unless-stopped
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
-      - "5000:5000" # Porta unificada da API
+      - "5000:5000"
     depends_on:
       - backend1
       - backend2
@@ -42,5 +45,6 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
