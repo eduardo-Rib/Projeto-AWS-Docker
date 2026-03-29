@@ -1,0 +1,32 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: contas
+
+  backend1:
+  build: ./backend
+  depends_on:
+    - db
+
+  backend2:
+    build: ./backend
+    depends_on:
+      - db
+
+  backend3:
+    build: ./backend
+    depends_on:
+      - db
+  frontend:
+    build: ./frontend
+
+  haproxy:
+    image: haproxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
