@@ -1,43 +1,51 @@
 from flask import Flask
-from config import Config
 from database import db
-from flask_cors import CORS
-from routes.contas import contas_bp
-from routes.centros import centros_bp
 import time
-from sqlalchemy.exc import OperationalError
-import os
+from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError
+from config import Config
 
 app = Flask(__name__)
-app.config.from_object(Config)
-
-CORS(app)
+app.config.from_object(Config) 
 
 db.init_app(app)
 
+# importa models
+from models import CentroCusto, Conta
+
+
 def wait_for_db():
-    for i in range(10):
+    tentativas = 10
+
+    for i in range(tentativas):
         try:
+            print(f"Tentando conectar ao banco... {i+1}/{tentativas}")
+
             with app.app_context():
-                db.create_all()
-            print("banco conectado com sucesso!")
-            return
+                db.engine.connect()
+                print("Banco conectado!")
+
+                try:
+                    db.create_all()
+                    print("Tabelas criadas (ou já existentes)")
+                except (ProgrammingError, IntegrityError):
+                    print("Tabelas já existem, seguindo execução...")
+
+                return
+
         except OperationalError:
-            print(f"Banco não está pronto... tentativa {i+1}/10")
+            print("Banco não está pronto, aguardando...")
             time.sleep(3)
-    
-    print("Não foi possível conectar ao banco.")
-    exit(1)
 
-if os.getenv("INSTANCE_ID") == "1":
-    wait_for_db()
+    raise Exception("Não foi possível conectar ao banco.")
 
-app.register_blueprint(contas_bp)
-app.register_blueprint(centros_bp)
 
-@app.route('/')
+wait_for_db()
+
+
+@app.route("/")
 def home():
-    return {'status': 'ok'}
+    return {"status": "ok"}
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
