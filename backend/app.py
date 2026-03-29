@@ -6,6 +6,7 @@ from routes.contas import contas_bp
 from routes.centros import centros_bp
 import time
 from sqlalchemy.exc import OperationalError
+import os
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -19,7 +20,7 @@ def wait_for_db():
         try:
             with app.app_context():
                 db.create_all()
-            print("anco conectado com sucesso!")
+            print("banco conectado com sucesso!")
             return
         except OperationalError:
             print(f"Banco não está pronto... tentativa {i+1}/10")
@@ -28,7 +29,8 @@ def wait_for_db():
     print("Não foi possível conectar ao banco.")
     exit(1)
 
-wait_for_db()
+if os.getenv("INSTANCE_ID") == "1":
+    wait_for_db()
 
 app.register_blueprint(contas_bp)
 app.register_blueprint(centros_bp)
