@@ -1,6 +1,15 @@
 FROM node:18
+
 WORKDIR /app
-COPY . .
+
+COPY package*.json ./
+
 RUN npm install
+
+COPY . .
+
 RUN npm run build
-CMD ["npx","serve","-s","build","-l","80"]
+
+RUN npm install -g serve
+
+CMD ["serve", "-s", "build", "-l", "80"]
