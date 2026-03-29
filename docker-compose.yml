@@ -1,32 +1,51 @@
-version: '3'
+version: '3.9'
+
 services:
+
   db:
     image: postgres
+    container_name: db
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: contas
+    ports:
+      - "5432:5432"
 
   backend1:
-  build: ./backend
-  depends_on:
-    - db
+    build:
+      context: ./backend
+    container_name: backend1
+    depends_on:
+      - db
 
   backend2:
-    build: ./backend
+    build:
+      context: ./backend
+    container_name: backend2
     depends_on:
       - db
 
   backend3:
-    build: ./backend
+    build:
+      context: ./backend
+    container_name: backend3
     depends_on:
       - db
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+    container_name: frontend
 
   haproxy:
-    image: haproxy
+    image: haproxy:latest
+    container_name: haproxy
     ports:
       - "80:80"
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
