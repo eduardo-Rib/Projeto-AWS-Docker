@@ -20,11 +20,6 @@ db.init_app(app)
 
 
 def init_db():
-    """
-    Inicializa o banco de forma segura para múltiplos containers/workers.
-    Usa lock no PostgreSQL para impedir que vários processos executem
-    db.create_all() ao mesmo tempo.
-    """
     retries = 15
 
     with app.app_context():
@@ -34,8 +29,6 @@ def init_db():
 
             try:
                 conn = db.engine.connect()
-
-                # Lock global da aplicação; qualquer número inteiro serve.
                 conn.execute(text("SELECT pg_advisory_lock(987654321)"))
                 lock_acquired = True
 
